@@ -1,0 +1,26 @@
+# Base image with Python 3.12
+FROM python:3.12-slim
+
+# Build arg for your cert file name
+ARG CERT_FILE
+
+# Copy your CA cert into the container
+COPY ${CERT_FILE} /usr/local/share/ca-certificates/custom-proxy.crt
+
+# Install git and trust the cert
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Tell Python requests and SSL libraries to trust system CAs
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+
+# Optional: trust certs for git HTTPS operations too
+RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
+
+# Set working directory
+WORKDIR /workspaces
